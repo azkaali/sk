@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SkillConnect — On-Demand Skilled Labor Marketplace</title>
+  
+  <!-- FontAwesome Icons & Google Fonts -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <!-- Leaflet CSS & JS for Interactive Map -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <!-- Custom Design System Stylesheet -->
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <!-- Navigation Bar -->
+  <header class="navbar">
+    <a href="#" class="brand">
+      <div class="brand-icon">
+        <i class="fa-solid fa-handshake-angle"></i>
+      </div>
+      <div>
+        <span>SkillConnect</span>
+        <span class="brand-badge">MARKETPLACE v1.0</span>
+      </div>
+    </a>
+
+    <div class="nav-controls">
+      <!-- Role Switcher -->
+      <div class="role-switcher">
+        <button class="role-btn active" data-role="customer" onclick="app.setRole('customer')">
+          <i class="fa-solid fa-user"></i> Customer
+        </button>
+        <button class="role-btn" data-role="provider" onclick="app.setRole('provider')">
+          <i class="fa-solid fa-screwdriver-wrench"></i> Provider
+        </button>
+        <button class="role-btn admin-role" data-role="admin" onclick="app.setRole('admin')">
+          <i class="fa-solid fa-user-shield"></i> Admin Web
+        </button>
+      </div>
+
+      <!-- Device View Simulator Toggle -->
+      <button id="deviceToggleBtn" class="device-toggle-btn" onclick="app.toggleDeviceMode()">
+        <i class="fa-solid fa-mobile-screen-button"></i> Mobile View
+      </button>
+    </div>
+  </header>
+
+  <!-- Main Application Container -->
+  <main class="app-container">
+    <div id="deviceWrapper" class="device-wrapper">
+      <div class="phone-notch"></div>
+
+      <!-- ================= CUSTOMER VIEW SECTION ================= -->
+      <section id="customerViewSection" class="view-section active">
+        <!-- Category Filter Chips -->
+        <div id="customerCategoryBar" class="category-bar" style="margin-bottom: 1rem;"></div>
+
+        <div class="grid-2col">
+          <!-- Left Column: Map Discovery -->
+          <div>
+            <div class="card" style="padding: 0.75rem; margin-bottom: 1rem;">
+              <div style="display:flex; gap:8px; margin-bottom:0.75rem;">
+                <input type="text" class="form-control" placeholder="Search address or landmark..." value="742 Evergreen Terrace, Downtown">
+                <button class="btn btn-primary btn-sm"><i class="fa-solid fa-magnifying-glass"></i></button>
+              </div>
+              <div id="mapContainer" class="map-container"></div>
+            </div>
+          </div>
+
+          <!-- Right Column: Active Job & InDrive Bids -->
+          <div>
+            <!-- Active Job Card -->
+            <div id="customerActiveJobContainer" style="margin-bottom: 1rem;"></div>
+
+            <!-- Bids Comparison List -->
+            <div id="customerBidsContainer"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= PROVIDER VIEW SECTION ================= -->
+      <section id="providerViewSection" class="view-section">
+        <!-- Provider Profile & Online Toggle Bar -->
+        <div id="providerHeaderContainer"></div>
+
+        <div class="grid-2col">
+          <!-- Left Column: Assigned Active Job & KYC Status -->
+          <div>
+            <div id="providerActiveJobContainer" style="margin-bottom: 1rem;"></div>
+            
+            <div class="card" style="margin-bottom: 1rem;">
+              <div class="card-header">
+                <h4 class="card-title"><i class="fa-solid fa-shield-halved" style="color:var(--primary);"></i> Verification Status</h4>
+                <button class="btn btn-outline btn-sm" onclick="app.showModal('kycModal')">
+                  <i class="fa-solid fa-file-arrow-up"></i> Submit KYC
+                </button>
+              </div>
+              <p style="font-size: 0.82rem; color: var(--text-muted);">
+                Submit your Government ID & Trade Certifications to get the <strong>Verified Badge</strong> and start receiving high-value job leads.
+              </p>
+            </div>
+
+            <!-- Wallet & Earnings -->
+            <div id="providerWalletContainer"></div>
+          </div>
+
+          <!-- Right Column: Broadcasted Jobs Feed -->
+          <div>
+            <div class="card-header" style="margin-bottom: 0.5rem;">
+              <h3 class="card-title"><i class="fa-solid fa-tower-cell" style="color:var(--accent-gold);"></i> Nearby Broadcasted Job Leads</h3>
+            </div>
+            <div id="providerJobFeedContainer"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= ADMIN CONSOLE VIEW SECTION ================= -->
+      <section id="adminViewSection" class="view-section">
+        <!-- Analytics Dashboard Metrics -->
+        <div id="adminAnalyticsContainer" style="margin-bottom: 1.5rem;"></div>
+
+        <div class="grid-2col" style="margin-bottom: 1.5rem;">
+          <!-- Provider KYC Approval Queue -->
+          <div class="card">
+            <div class="card-header">
+              <h3 class="card-title"><i class="fa-solid fa-id-card" style="color:var(--primary);"></i> Provider Verification Queue (KYC)</h3>
+            </div>
+            <div id="adminKycContainer"></div>
+          </div>
+
+          <!-- Dispute Resolution Queue -->
+          <div class="card">
+            <div class="card-header">
+              <h3 class="card-title"><i class="fa-solid fa-scale-balanced" style="color:var(--accent-red);"></i> Dispute Resolution Queue</h3>
+            </div>
+            <div id="adminDisputesContainer"></div>
+          </div>
+        </div>
+
+        <!-- Category & Price Guardrail Management -->
+        <div class="card">
+          <div class="card-header">
+            <h3 class="card-title"><i class="fa-solid fa-sliders" style="color:var(--secondary);"></i> Category & Bid Guardrail Management</h3>
+          </div>
+          <div id="adminGuardrailsContainer"></div>
+        </div>
+      </section>
+
+    </div>
+  </main>
+
+  <!-- ================= MODAL DIALOGS ================= -->
+
+  <!-- Post Job Request Modal -->
+  <div id="createJobModal" class="modal-overlay">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 class="modal-title"><i class="fa-solid fa-plus-circle" style="color:var(--primary);"></i> Post a New Job Request</h3>
+        <button class="modal-close" onclick="app.hideModal('createJobModal')">&times;</button>
+      </div>
+      <form id="createJobForm">
+        <div class="form-group">
+          <label class="form-label">Job Title</label>
+          <input type="text" id="jobTitleInput" class="form-control" placeholder="e.g. Fix Kitchen Breaker & Smart Socket" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Trade Category</label>
+          <select id="jobCategorySelect" class="form-control" required>
+            <option value="electrician">Electrician</option>
+            <option value="plumber">Plumber</option>
+            <option value="carpenter">Carpenter</option>
+            <option value="painter">Painter</option>
+            <option value="ac_tech">AC Technician</option>
+            <option value="mechanic">Mechanic</option>
+            <option value="cleaner">House Cleaner</option>
+            <option value="welder">Welder</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Detailed Job Description</label>
+          <textarea id="jobDescriptionInput" class="form-control" rows="3" placeholder="Describe the issue, work scope, or specific parts required..." required></textarea>
+        </div>
+
+        <div class="grid-2col">
+          <div class="form-group">
+            <label class="form-label">Preferred Schedule</label>
+            <select id="jobScheduleSelect" class="form-control">
+              <option value="Now">Now (On-Demand)</option>
+              <option value="Today Afternoon">Today Afternoon</option>
+              <option value="Tomorrow Morning">Tomorrow Morning</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Target Budget Range ($)</label>
+            <input type="text" id="jobBudgetInput" class="form-control" placeholder="e.g. $50 - $100">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Upload Site Photo (Optional)</label>
+          <input type="file" class="form-control">
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-block" style="margin-top:1rem;">
+          <i class="fa-solid fa-paper-plane"></i> Broadcast Job to Nearby Providers
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Submit Bid Modal (Provider) -->
+  <div id="submitBidModal" class="modal-overlay">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 class="modal-title"><i class="fa-solid fa-gavel" style="color:var(--primary);"></i> Submit Your Bid</h3>
+        <button class="modal-close" onclick="app.hideModal('submitBidModal')">&times;</button>
+      </div>
+      <p id="bidModalJobTitle" style="font-weight:700; margin-bottom:4px;"></p>
+      <div id="bidModalGuardrails" style="font-size:0.78rem; color:var(--accent-gold); margin-bottom:1rem;"></div>
+
+      <div class="form-group">
+        <label class="form-label">Your Bid Price ($)</label>
+        <input type="number" id="bidPriceInput" class="form-control" placeholder="Enter bid price" required>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Estimated Time of Arrival (Minutes)</label>
+        <input type="number" id="bidEtaInput" class="form-control" placeholder="e.g. 20" required>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Note for Customer (Optional)</label>
+        <input type="text" id="bidMessageInput" class="form-control" placeholder="e.g. Can bring extra replacement parts...">
+      </div>
+
+      <button class="btn btn-primary btn-block" onclick="providerView.submitBidFromModal()">
+        <i class="fa-solid fa-check"></i> Submit Bid
+      </button>
+    </div>
+  </div>
+
+  <!-- Counter-Offer Modal (InDrive Negotiation) -->
+  <div id="counterBidModal" class="modal-overlay">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 class="modal-title"><i class="fa-solid fa-comments-dollar" style="color:var(--accent-gold);"></i> Counter-Offer Price</h3>
+        <button class="modal-close" onclick="app.hideModal('counterBidModal')">&times;</button>
+      </div>
+      <p style="font-size:0.85rem; color:var(--text-muted); margin-bottom:1rem;">
+        Provider's Original Bid: <strong id="counterModalOriginalPrice" style="color:var(--text-main);"></strong>
+      </p>
+
+      <div class="form-group">
+        <label class="form-label">Your Proposed Price ($)</label>
+        <input type="number" id="counterPriceInput" class="form-control" required>
+      </div>
+
+      <button class="btn btn-primary btn-block" onclick="customerView.submitCounterOffer()">
+        <i class="fa-solid fa-arrow-right-arrow-left"></i> Send Counter-Offer
+      </button>
+    </div>
+  </div>
+
+  <!-- Payment Modal -->
+  <div id="paymentModal" class="modal-overlay">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 class="modal-title"><i class="fa-solid fa-credit-card" style="color:var(--primary);"></i> Job Receipt & Payment</h3>
+        <button class="modal-close" onclick="app.hideModal('paymentModal')">&times;</button>
+      </div>
+      <div style="text-align:center; padding:1rem 0;">
+        <span style="font-size:0.85rem; color:var(--text-muted);">Total Amount Due</span>
+        <div id="paymentAmountText" style="font-size:2.5rem; font-weight:800; color:var(--primary);">$65.00</div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Select Payment Method</label>
+        <select class="form-control">
+          <option>💳 Credit / Debit Card (PCI-DSS Masked)</option>
+          <option>📱 Mobile Wallet / Apple Pay</option>
+          <option>💵 Cash on Completion</option>
+        </select>
+      </div>
+
+      <button class="btn btn-primary btn-block" onclick="customerView.processPayment()">
+        <i class="fa-solid fa-lock"></i> Authorize & Pay Now
+      </button>
+    </div>
+  </div>
+
+  <!-- Rating & Review Modal -->
+  <div id="ratingModal" class="modal-overlay">
+    <div class="modal-card" style="text-align:center;">
+      <h3 style="margin-bottom:0.5rem;">Rate Your Provider</h3>
+      <p style="font-size:0.85rem; color:var(--text-muted); margin-bottom:1rem;">How was your service with Alex Rivers?</p>
+      
+      <div style="font-size:2rem; color:var(--accent-gold); margin-bottom:1rem; cursor:pointer;">
+        <i class="fa-solid fa-star"></i>
+        <i class="fa-solid fa-star"></i>
+        <i class="fa-solid fa-star"></i>
+        <i class="fa-solid fa-star"></i>
+        <i class="fa-solid fa-star"></i>
+      </div>
+
+      <div class="form-group">
+        <textarea class="form-control" rows="2" placeholder="Leave an optional review..."></textarea>
+      </div>
+
+      <button class="btn btn-primary btn-block" onclick="customerView.submitRating()">
+        Submit Review
+      </button>
+    </div>
+  </div>
+
+  <!-- Provider KYC Modal -->
+  <div id="kycModal" class="modal-overlay">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 class="modal-title"><i class="fa-solid fa-id-card" style="color:var(--primary);"></i> Provider KYC Verification</h3>
+        <button class="modal-close" onclick="app.hideModal('kycModal')">&times;</button>
+      </div>
+      <form id="kycSubmitForm">
+        <div class="form-group">
+          <label class="form-label">Full Name (Matching Govt ID)</label>
+          <input type="text" id="kycNameInput" class="form-control" required placeholder="e.g. Carlos Mendez">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Phone Number</label>
+          <input type="text" id="kycPhoneInput" class="form-control" required placeholder="+1 (555) 000-0000">
+        </div>
+        <div class="grid-2col">
+          <div class="form-group">
+            <label class="form-label">Primary Trade</label>
+            <select id="kycCategorySelect" class="form-control">
+              <option value="electrician">Electrician</option>
+              <option value="plumber">Plumber</option>
+              <option value="painter">Painter</option>
+              <option value="carpenter">Carpenter</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Years of Experience</label>
+            <input type="number" id="kycExpInput" class="form-control" required placeholder="5">
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Government ID Upload</label>
+          <input type="file" class="form-control">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Live Selfie Photo Upload</label>
+          <input type="file" class="form-control">
+        </div>
+        <button type="submit" class="btn btn-primary btn-block">Submit for Verification</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Chat Modal -->
+  <div id="chatModal" class="modal-overlay">
+    <div class="modal-card" style="max-width:480px; padding:0;">
+      <div class="chat-header">
+        <h4 id="chatModalTitle" style="font-size:0.9rem; font-weight:700;">In-App Chat</h4>
+        <div style="display:flex; gap:6px;">
+          <button class="btn btn-secondary btn-sm" onclick="chatComp.triggerMaskedCall()"><i class="fa-solid fa-phone"></i> Masked Call</button>
+          <button class="modal-close" onclick="app.hideModal('chatModal')">&times;</button>
+        </div>
+      </div>
+      <div class="chat-window">
+        <div id="chatMessagesContainer" class="chat-messages"></div>
+        <div class="chat-input-bar">
+          <input type="text" id="chatInputText" class="form-control" placeholder="Type a message..." onkeypress="if(event.key==='Enter') chatComp.sendMessage()">
+          <button class="btn btn-primary btn-sm" onclick="chatComp.sendMessage()"><i class="fa-solid fa-paper-plane"></i></button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Masked Call Simulator Modal -->
+  <div id="maskedCallModal" class="modal-overlay">
+    <div class="modal-card" style="max-width:340px; text-align:center; background:#0f172a; border-color:var(--primary);">
+      <div style="font-size:3rem; color:var(--primary); margin:1rem 0;"><i class="fa-solid fa-shield-cat"></i></div>
+      <h3 style="font-size:1.1rem; font-weight:700; margin-bottom:4px;">Privacy-Masked Call</h3>
+      <p style="font-size:0.78rem; color:var(--text-muted); margin-bottom:1rem;">Your phone number is protected & hidden.</p>
+      <div id="callTimerText" style="font-size:1.5rem; font-weight:800; color:var(--accent-gold); margin-bottom:1.5rem;">00:00</div>
+      <button class="btn btn-danger btn-block" onclick="chatComp.endMaskedCall()"><i class="fa-solid fa-phone-slash"></i> End Call</button>
+    </div>
+  </div>
+
+  <!-- Toast Container -->
+  <div id="toastContainer" class="toast-container"></div>
+
+  <!-- Application Logic Scripts -->
+  <script src="js/store.js"></script>
+  <script src="js/components/map.js"></script>
+  <script src="js/components/customer.js"></script>
+  <script src="js/components/provider.js"></script>
+  <script src="js/components/admin.js"></script>
+  <script src="js/components/chat.js"></script>
+  <script src="app.js"></script>
+
+</body>
+</html>

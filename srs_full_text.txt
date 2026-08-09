@@ -1,0 +1,222 @@
+﻿Software Requirements Specification
+SkillConnect â€” On-Demand Skilled Labor Marketplace (Cross-Platform Mobile Application)
+Document Version: 1.0
+Date: July 23, 2026
+Prepared for: Product / Engineering Planning
+Table of Contents
+TOC \h \o "1-3"
+1. Introduction
+1.1 Purpose
+This document defines the functional and non-functional requirements for SkillConnect, a cross-platform mobile application that connects everyday users who need work done ("Customers") with independent skilled laborers and tradespeople ("Providers") â€” e.g. electricians, plumbers, carpenters, painters, mechanics, movers, cleaners, masons, welders, AC technicians, and similar trades. The platform operates on a location-aware, on-demand model similar in interaction pattern to ride-hailing apps, and uses an open, negotiable bidding mechanism similar to InDrive rather than fixed platform-set pricing.
+1.2 Scope
+The system consists of three client applications sharing one backend:
+Customer App (iOS & Android) â€” post job requests, discover nearby providers, receive and compare bids, chat, track provider arrival, pay, and rate.
+Provider App (iOS & Android) â€” set availability and service radius, view nearby job requests, submit bids, navigate to job location, chat, receive payment, and build a rating profile.
+Admin Web Console â€” user/provider verification (KYC), dispute resolution, category & pricing-guardrail management, analytics, and content moderation.
+Out of scope for v1.0: full-time employment/staffing contracts, insurance underwriting, and in-app manufacturing/e-commerce of materials (may be considered for a later phase).
+1.3 Definitions, Acronyms, and Abbreviations
+Term
+Definition
+Customer
+A user who posts a job request seeking a skilled laborer.
+Provider
+A verified skilled laborer/tradesperson offering services.
+Job Request
+A task posted by a Customer describing work needed, location, and timing.
+Bid
+An offer submitted by a Provider against a Job Request, stating price and ETA.
+KYC
+Know Your Customer â€” identity/skill verification process for Providers.
+ETA
+Estimated Time of Arrival.
+SLA
+Service Level Agreement.
+OTP
+One-Time Password, used for phone/identity verification.
+Geofence
+A virtual radius used to match nearby Providers to a Job Request.
+1.4 References
+Apple Human Interface Guidelines; Google Material Design Guidelines.
+PCI-DSS payment security standard (for card handling via a certified payment processor).
+Local trade licensing / labor regulations applicable to the launch region(s).
+1.5 Overview
+Section 2 describes the product at a high level. Section 3 details functional requirements by module. Section 4 covers non-functional requirements. Section 5 describes data entities. Section 6 covers external interfaces. Section 7 recommends technology and architecture. Section 8 lists assumptions, constraints, and risks. Section 9 defines success metrics and future scope.
+2. Overall Description
+2.1 Product Perspective
+SkillConnect is a new, standalone two-sided marketplace product. It is architected as a single backend (API + real-time services) with two native-feeling mobile front ends built from one shared cross-platform codebase, plus a web-based admin console.
+2.2 Product Functions (Summary)
+Account creation and role selection (Customer / Provider), with Provider identity and skill verification.
+Location-based discovery: Customers see nearby available Providers by trade category; Providers see nearby open Job Requests.
+Job posting with description, category, photos, preferred schedule, and budget range.
+Open bidding: multiple Providers can submit competing bids on a Job Request; Customer compares and selects.
+In-app chat and voice call masking (privacy-preserving) between matched Customer and Provider.
+Live location tracking of the Provider en route, similar to ride-hailing trip tracking.
+In-app payments (cash-on-completion option and digital payment), platform commission handling, and payouts to Providers.
+Two-way rating and review system after job completion.
+Push notifications for bid activity, matches, arrival, and payment events.
+Admin tools for verification, dispute handling, and marketplace health monitoring.
+2.3 User Classes and Characteristics
+User Class
+Description
+Key Needs
+Customer
+General public needing a repair, installation, or manual-labor task done.
+Fast discovery, transparent pricing via bids, trust signals (ratings, verification), safety.
+Provider
+Independent skilled laborer or small tradesperson.
+Steady access to nearby job leads, fair bidding, timely payment, low platform friction.
+Admin / Ops
+Internal staff moderating the marketplace.
+Verification tools, fraud detection, dispute workflows, analytics.
+Guest (unauthenticated)
+First-time visitor browsing before signing up.
+Preview of how the service works before committing to sign-up.
+2.4 Operating Environment
+Mobile OS: iOS 16+ and Android 10+ (API level 29+).
+Backend: cloud-hosted (AWS/GCP/Azure â€” see Section 7), horizontally scalable.
+Network: must degrade gracefully on 3G/4G and intermittent connectivity, common in field/on-site conditions.
+2.5 Design and Implementation Constraints
+Must comply with app store review guidelines for two-sided gig-work marketplaces (Apple App Store & Google Play).
+Must comply with local labor/trade licensing rules in each launch market; Provider onboarding must capture required license/ID fields per region.
+Payment flows must go through a PCI-DSS compliant processor; the app itself must not store raw card data.
+Data protection: personal data handling must comply with applicable regional privacy law (e.g., GDPR-equivalent where relevant).
+2.6 Assumptions and Dependencies
+Users have GPS-capable smartphones and grant location permission for core functionality to work.
+A third-party maps/geolocation provider and a payment gateway are available and contracted.
+SMS/OTP delivery provider is available in all launch regions.
+3. Functional Requirements
+3.1 Onboarding, Authentication & Verification
+FR-1.1  The system shall allow sign-up via phone number + OTP, with optional email and social login (Google/Apple).
+FR-1.2  The system shall require the user to select a role: Customer, Provider, or both.
+FR-1.3  The system shall require Providers to complete a verification flow: government ID upload, live selfie match, trade/skill category selection, optional certifications/licenses, and years of experience.
+FR-1.4  The system shall place newly registered Providers into a "Pending Verification" state; they shall not appear in Customer search results or be able to bid until Admin approves them.
+FR-1.5  The system shall allow Customers to use core browsing features as guests but require authentication before posting a job or contacting a Provider.
+FR-1.6  The system shall support profile management: name, photo, address book of saved locations, and (for Providers) service categories, service radius, and working hours.
+3.2 Location & Discovery (Map View)
+FR-2.1  The system shall display a map-based home screen (ride-hailing style) showing the user's current location and nearby relevant markers: available Providers (for Customers) or open Job Requests (for Providers).
+FR-2.2  The system shall let Customers filter Providers by trade category, minimum rating, verification badge, and distance.
+FR-2.3  The system shall let Providers set a configurable service radius and toggle an Online/Offline availability status, mirroring driver availability toggles in ride-hailing apps.
+FR-2.4  The system shall update Provider location in near real time (target: every 5â€“10 seconds while online) for accurate map display.
+FR-2.5  The system shall support search-by-address in addition to current GPS location, so Customers can request work at a different location (e.g., a rental property).
+3.3 Job Posting
+FR-3.1  The system shall allow a Customer to create a Job Request specifying: category, free-text description, up to 5 photos, desired schedule (Now / Scheduled date-time), job location, and an optional target budget range.
+FR-3.2  The system shall allow a Customer to mark a Job Request as "Open to all nearby Providers" or "Invite specific Providers" (e.g., previously used, favorited providers).
+FR-3.3  The system shall broadcast new Open Job Requests to eligible, online, in-radius Providers matching the selected category.
+FR-3.4  The system shall allow a Customer to edit or cancel a Job Request prior to accepting a bid, with cancellation reason capture.
+3.4 Bidding & Matching (InDrive-style)
+FR-4.1  The system shall allow any eligible Provider to submit a bid on an open Job Request, consisting of a proposed price, an ETA, and an optional message.
+FR-4.2  The system shall allow multiple Providers to bid concurrently on the same Job Request until the Customer accepts one.
+FR-4.3  The system shall allow the Customer to counter-offer a submitted bid (propose a different price back to the Provider), enabling a negotiation loop consistent with the InDrive bidding model.
+FR-4.4  The system shall allow a Provider to revise or withdraw a bid before it is accepted.
+FR-4.5  The system shall present all received bids to the Customer sorted by price, rating, and ETA, and shall show each bidding Provider's profile, rating, and verification badge.
+FR-4.6  Upon Customer acceptance of a single bid, the system shall automatically close/expire all other bids on that Job Request and notify the non-selected Providers.
+FR-4.7  The system shall enforce a configurable minimum and maximum bid guardrail per category (set by Admin) to curb spam or predatory pricing, while otherwise leaving price negotiation open between the two parties.
+FR-4.8  The system shall support a bid expiry window (e.g., 10â€“15 minutes) after which an un-actioned bid automatically closes.
+3.5 In-App Communication
+FR-5.1  The system shall provide in-app text chat between a Customer and a Provider, enabled once a bid negotiation begins.
+FR-5.2  The system shall provide masked (number-privacy-preserving) voice calling between matched parties.
+FR-5.3  The system shall retain chat history for the duration of the job plus a configurable retention period for dispute-resolution purposes.
+3.6 Job Execution & Tracking
+FR-6.1  Once a bid is accepted, the system shall create a Job record with status states: Accepted â†’ Provider En Route â†’ Arrived â†’ In Progress â†’ Completed â†’ (optionally) Disputed/Cancelled.
+FR-6.2  The system shall show the Customer live map tracking of the en-route Provider with ETA, mirroring ride-hailing trip tracking.
+FR-6.3  The system shall require the Provider to mark "Arrived" and "Job Started"/"Job Completed" from the app, timestamping each transition.
+FR-6.4  The system shall allow either party to raise a dispute on a Job (e.g., no-show, scope disagreement, quality issue), routing it to Admin.
+FR-6.5  The system shall support before/after photo capture at job completion for quality and dispute evidence.
+3.7 Payments
+FR-7.1  The system shall support in-app digital payment (card/wallet) and a cash-on-completion option, both recorded against the Job.
+FR-7.2  The system shall calculate and deduct a platform commission from the agreed job price for digital payments, and reconcile commission owed for cash jobs against the Provider's account.
+FR-7.3  The system shall support scheduled payouts to Provider bank accounts / mobile wallets, with a payout history view.
+FR-7.4  The system shall generate a digital receipt/invoice for each completed Job.
+FR-7.5  The system shall support refunds/adjustments initiated by Admin as part of dispute resolution.
+3.8 Ratings, Reviews & Trust
+FR-8.1  The system shall prompt both Customer and Provider to rate each other (1â€“5 stars) and leave an optional written review after Job Completion.
+FR-8.2  The system shall display a Provider's aggregate rating, completed-job count, response rate, and verification badges on their profile and in bid lists.
+FR-8.3  The system shall allow Admin to suspend or deactivate accounts that fall below a configurable rating/dispute threshold.
+3.9 Notifications
+FR-9.1  The system shall send push notifications for: new job broadcast (to Providers), new bid received (to Customers), bid accepted/declined, chat messages, Provider en route/arrived, payment confirmation, and rating prompts.
+FR-9.2  The system shall allow users to configure notification preferences per category.
+3.10 Admin Console
+FR-10.1  The system shall provide Admin tools to review and approve/reject Provider verification submissions.
+FR-10.2  The system shall provide Admin tools to configure service categories, min/max bid guardrails per category, and platform commission rates.
+FR-10.3  The system shall provide a dispute-resolution queue with case detail (chat log, photos, job timeline) and resolution actions (refund, payout release, account action).
+FR-10.4  The system shall provide analytics dashboards: active users, job volume, average bid-to-accept time, GMV, cancellation rate, and category-level supply/demand balance.
+4. Non-Functional Requirements
+Category
+Requirement
+Performance
+Map/discovery screen shall load nearby results within 2 seconds on a stable 4G connection; bid notifications shall be delivered within 3 seconds of submission.
+Scalability
+Backend shall support horizontal scaling to accommodate city-by-city launch growth without architecture changes.
+Availability
+Core booking/bidding path shall target 99.9% uptime.
+Security
+All traffic over TLS 1.2+; passwords/OTPs never stored in plain text; role-based access control in Admin console; PCI-DSS compliant payment handling.
+Privacy
+Phone numbers masked during in-app calls; personal data handling compliant with applicable regional privacy regulation; user data export/delete-my-account supported.
+Usability
+Core flows (post a job / find a job / submit a bid) shall be completable in 3 taps or fewer from the home screen.
+Localization
+UI text, currency, and date/time formats shall be externalized for multi-language and multi-region support from v1.0.
+Reliability/Offline
+App shall queue critical actions (e.g., bid submission) and retry automatically on connectivity loss, common in field conditions.
+Accessibility
+UI shall meet WCAG 2.1 AA-equivalent contrast and font-scaling support on both platforms.
+Auditability
+All Job status transitions, payments, and dispute actions shall be logged with timestamp and actor for audit and dispute purposes.
+5. Key Data Entities
+High-level entities the system must model (full schema to be defined during technical design):
+User (base identity: id, phone, email, roles, auth state)
+CustomerProfile / ProviderProfile (role-specific attributes: categories, service radius, availability, verification status, documents)
+JobRequest (category, description, photos, location, schedule, budget range, status)
+Bid (jobRequestId, providerId, price, eta, message, status, timestamps)
+Job (accepted bid reference, status timeline, payment reference, dispute reference)
+Payment (amount, method, commission, payout status)
+Review (jobId, fromUserId, toUserId, rating, comment)
+Dispute (jobId, raisedBy, reason, evidence, resolution)
+Notification (userId, type, payload, read status)
+6. External Interface Requirements
+6.1 Third-Party Integrations
+Maps & Geolocation API (e.g., Google Maps Platform) â€” map rendering, geocoding, distance/ETA calculation.
+Push Notification service (Firebase Cloud Messaging for Android, Apple Push Notification service for iOS).
+SMS/OTP provider for phone verification.
+Payment gateway supporting cards, wallets, and regional payment methods, plus payout/disbursement API.
+Cloud object storage for photo/document uploads (verification IDs, job photos).
+6.2 Internal APIs
+A REST/GraphQL API layer plus a real-time channel (WebSocket or equivalent, e.g., for live location and bid updates) shall be exposed to both mobile clients and the Admin console.
+7. Recommended Technology Approach
+7.1 Mobile Client
+A single cross-platform codebase is recommended so one team can ship both iOS and Android from shared logic:
+React Native (with TypeScript) â€” large ecosystem, strong maps/payment/library support, or
+Flutter (Dart) â€” strong performance and consistent UI rendering across platforms.
+Either is suitable; the choice typically comes down to team familiarity. Native modules will still be needed for background location tracking and payment SDKs on both platforms.
+7.2 Backend
+API layer: Node.js (NestJS/Express) or a Go/Java service, exposing REST/GraphQL.
+Real-time layer: WebSocket service (e.g., Socket.io) or a managed real-time database for live location/bid updates.
+Database: PostgreSQL (with PostGIS extension for geospatial queries) for core relational data; Redis for caching and presence (online/offline) state.
+Cloud hosting: AWS, GCP, or Azure, containerized (Docker/Kubernetes) for horizontal scaling.
+7.3 High-Level Architecture
+Customer App and Provider App (shared cross-platform codebase, role-based UI) communicate with an API Gateway, which routes to: Auth Service, Job/Bid Service, Location Service (geospatial matching), Payment Service, Notification Service, and Chat Service. A real-time channel pushes location updates and bid events directly to connected clients. The Admin Console consumes the same API Gateway with elevated permissions.
+8. Assumptions, Constraints & Risks
+8.1 Assumptions
+Initial launch targets a single city/region to validate supply/demand balance before multi-region expansion.
+Providers are independent contractors, not employees, of the platform (classification to be confirmed with local legal counsel).
+8.2 Constraints
+Regulatory: gig-worker classification and trade licensing rules vary by region and may require region-specific onboarding fields.
+Trust & safety: unlike ride-hailing, jobs often happen inside a Customer's home, raising the bar for identity verification and in-app safety features (e.g., share job status with a contact, SOS button).
+8.3 Key Risks
+Cold-start / liquidity risk: insufficient Providers in a new area leads to poor Customer experience â€” mitigate with a manual/seeded Provider onboarding push at launch.
+Race-to-the-bottom pricing from open bidding â€” mitigate with the min/max bid guardrails (FR-4.7) and rating-weighted bid display.
+Fraud/no-show risk â€” mitigate with verification, ratings, and a cancellation/no-show penalty policy.
+9. Success Metrics & Future Scope
+9.1 Success Metrics (v1.0)
+Average time from Job Request posted to first bid received.
+Bid-to-accept conversion rate.
+Job completion rate vs. cancellation/dispute rate.
+Provider retention (7-day / 30-day active) and Customer repeat-booking rate.
+9.2 Future Scope (Post-v1.0)
+In-app materials marketplace (e.g., ordering parts alongside a job).
+Subscription/membership tier for frequent Customers (e.g., recurring cleaning).
+Team/crew bidding for larger jobs (multiple Providers on one Job Request).
+In-app insurance or guarantee add-on for higher-value jobs.
+Provider loyalty/incentive program based on rating and volume.
+End of Document.
